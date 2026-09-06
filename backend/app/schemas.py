@@ -39,6 +39,7 @@ class TailorResult(BaseModel):
     matchScore: int = 0
     matchedKeywords: List[str] = []
     missingSkills: List[str] = []
+    keySkills: List[str] = []       # top skills for interview preparation
     tailoredSummary: str = ""
     tailoredBullets: List[str] = []
     suggestedFocus: str = ""
@@ -81,6 +82,7 @@ class ApplicationOut(BaseModel):
     tailored_summary: str
     tailored_bullets: List[str]
     missing_skills: List[str]
+    key_skills: List[str] = []     # top skills for interview preparation
     jd: str
     assessment_date: Optional[str] = None
     auto_applied: bool = False

@@ -16,6 +16,7 @@ Respond with ONLY a JSON object, no preamble, no markdown fences, matching exact
   "matchScore": <integer 0-100>,
   "matchedKeywords": [<strings, up to 8>],
   "missingSkills": [<strings, up to 6, skills in the JD not present in the resume>],
+  "keySkills": [<strings, up to 10 — the most important technical skills/tools/frameworks from the JD that this role requires, for interview preparation. Include both skills the candidate has AND doesn't have — this is a study guide.>],
   "tailoredSummary": "<2-3 sentence resume summary tailored to this JD, using ONLY facts present in the master resume>",
   "tailoredBullets": [<3-5 rewritten bullet points pulled from the candidate's real experience/projects, reworded to mirror JD keywords, each starting with an action verb, NEVER inventing metrics or skills not in the master resume>],
   "suggestedFocus": "<one sentence on which existing project or experience to lead with for this JD>"

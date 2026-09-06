@@ -35,6 +35,7 @@ class JobMatch(Base):
     match_score = Column(Integer, default=0)
     matched_keywords = Column(JSON, default=list)
     missing_skills = Column(JSON, default=list)
+    key_skills = Column(JSON, default=list)     # top skills from JD for interview prep
     tailored_summary = Column(Text, default="")
     tailored_bullets = Column(JSON, default=list)
     discovered_date = Column(String)
@@ -58,6 +59,7 @@ class Application(Base):
     tailored_summary = Column(Text, default="")
     tailored_bullets = Column(JSON, default=list)
     missing_skills = Column(JSON, default=list)
+    key_skills = Column(JSON, default=list)           # top skills from JD for interview prep
     jd = Column(Text, default="")
     assessment_date = Column(String, nullable=True)  # ISO date string, for OA/aptitude test tracking
     auto_applied = Column(Integer, default=0)         # 0/1 — was this submitted by the auto-apply pipeline?

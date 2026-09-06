@@ -28,6 +28,10 @@ def run_light_migrations():
         "applications": [
             ("auto_applied", "INTEGER DEFAULT 0"),
             ("status_note", "TEXT DEFAULT ''"),
+            ("key_skills", "JSON DEFAULT '[]'"),
+        ],
+        "job_matches": [
+            ("key_skills", "JSON DEFAULT '[]'"),
         ],
     }
     with engine.connect() as conn:

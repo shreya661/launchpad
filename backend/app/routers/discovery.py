@@ -78,6 +78,7 @@ def run_discovery(db: Session = Depends(get_db)):
             match_score=scored.get("matchScore", 0),
             matched_keywords=scored.get("matchedKeywords", []),
             missing_skills=scored.get("missingSkills", []),
+            key_skills=scored.get("keySkills", []),
             tailored_summary=scored.get("tailoredSummary", ""),
             tailored_bullets=scored.get("tailoredBullets", []),
             discovered_date=date.today().isoformat(),
@@ -154,6 +155,7 @@ def list_matches(db: Session = Depends(get_db)):
             "id": r.id, "source": r.source, "company": r.company, "title": r.title,
             "url": r.url, "location": r.location, "matchScore": r.match_score,
             "matchedKeywords": r.matched_keywords, "missingSkills": r.missing_skills,
+            "keySkills": r.key_skills or [],
             "tailoredSummary": r.tailored_summary, "tailoredBullets": r.tailored_bullets,
             "discoveredDate": r.discovered_date,
         }
@@ -225,10 +227,37 @@ def promote_match(match_id: int, db: Session = Depends(get_db)):
         deadline=None, applied_date=date.today().isoformat(), status="applied",
         match_score=m.match_score, company_snapshot="",
         tailored_summary=m.tailored_summary, tailored_bullets=m.tailored_bullets,
-        missing_skills=m.missing_skills, jd=m.jd,
+        missing_skills=m.missing_skills, key_skills=m.key_skills or [], jd=m.jd,
     )
     db.add(app_row)
     m.dismissed = 1
     db.commit()
     db.refresh(app_row)
     return {"applicationId": app_row.id, "code": app_row.code}
+
+
+@router.get("/matches/{match_id}/interview-prep")
+def interview_prep(match_id: int, db: Session = Depends(get_db)):
+    """Returns everything you need to prepare for the interview for this job:
+    - keySkills:        top 10 technical skills this role demands (study guide)
+    - matchedKeywords:  skills from the JD you already have
+    - missingSkills:    skills the JD wants that you currently lack
+    - suggestedFocus:   which of your existing projects to lead with
+    - tailoredBullets:  ATS-ready bullets to use in your resume for this role
+    """
+    m = db.query(JobMatch).filter(JobMatch.id == match_id).first()
+    if not m:
+        raise HTTPException(status_code=404, detail="Match not found")
+    return {
+        "id": m.id,
+        "company": m.company,
+        "title": m.title,
+        "url": m.url,
+        "matchScore": m.match_score,
+        "keySkills": m.key_skills or [],
+        "matchedKeywords": m.matched_keywords or [],
+        "missingSkills": m.missing_skills or [],
+        "tailoredBullets": m.tailored_bullets or [],
+        "tailoredSummary": m.tailored_summary or "",
+        "jdExcerpt": (m.jd or "")[:500],   # first 500 chars of JD as context
+    }
