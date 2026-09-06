@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Launchpad — Job Search Command Center</title>
+<meta name="description" content="Fresher-focused job search dashboard: auto-discovers jobs, scores resumes, tracks applications, and manages portal profiles with connectors.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="brand"><div class="brand-mark"></div><div class="brand-name display">Launchpad</div></div>
+    <div class="nav-item active" data-view="dashboard"><span class="nav-dot"></span>Dashboard</div>
+    <div class="nav-item" data-view="resume"><span class="nav-dot"></span>Master resume</div>
+    <div class="nav-item" data-view="discover"><span class="nav-dot"></span>Discover jobs</div>
+    <div class="nav-item" data-view="tailor"><span class="nav-dot"></span>Tailor manually</div>
+    <div class="nav-item" data-view="tracker"><span class="nav-dot"></span>Applications</div>
+    <div class="nav-item" data-view="portals"><span class="nav-dot"></span>Job portals</div>
+    <div class="nav-item" data-view="github"><span class="nav-dot"></span>GitHub sync</div>
+    <div class="nav-item" data-view="referrals"><span class="nav-dot"></span>Referrals / Reach-out</div>
+    <div class="sidebar-foot">Fresher edition · 0-2 yr roles<br>Backend: <span id="api-status" class="mono">checking...</span></div>
+  </div>
+
+  <div id="main">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <h1 class="view-title">Mission control</h1>
+      <p class="view-sub">Your funnel, at a glance.</p>
+      <div class="stat-strip" id="stat-strip"></div>
+      <div class="card">
+        <div class="flex-between">
+          <div class="card-title" style="margin:0;">Applications over time</div>
+          <select id="dash-range" style="width:auto;padding:5px 10px;font-size:12px;">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+        <div id="timeline-chart" style="margin-top:16px;"></div>
+        <div id="timeline-table" style="margin-top:16px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin:0 0 14px;">Closing soon</div>
+        <div id="deadline-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin:0 0 14px;">Reach-outs to follow up on</div>
+        <div id="dash-followups"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin:0 0 14px;">Recent activity</div>
+        <div id="recent-list"></div>
+      </div>
+    </div>
+
+    <!-- MASTER RESUME -->
+    <div class="view" id="view-resume">
+      <h1 class="view-title">Master resume</h1>
+      <p class="view-sub">The single source of truth. Nothing gets tailored or claimed that isn't true here.</p>
+      <div class="card">
+        <div class="card-title">Profile</div>
+        <label>Name</label><input type="text" id="mr-name">
+        <div class="row2"><div><label>Email</label><input type="text" id="mr-email"></div><div><label>Phone</label><input type="text" id="mr-phone"></div></div>
+        <div class="row3">
+          <div><label>LinkedIn URL</label><input type="text" id="mr-linkedin" placeholder="https://linkedin.com/in/..."></div>
+          <div><label>GitHub URL</label><input type="text" id="mr-github" placeholder="https://github.com/..."></div>
+          <div><label>Portfolio URL</label><input type="text" id="mr-portfolio" placeholder="https://..."></div>
+        </div>
+        <label>Summary</label><textarea id="mr-summary"></textarea>
+      </div>
+      <div class="card">
+        <div class="flex-between"><div class="card-title" style="margin:0;">Experience &amp; projects</div><button class="small" onclick="addExpBlock()">+ Add entry</button></div>
+        <div id="mr-experience"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Skills (comma separated — this drives job discovery, put your strongest first)</div>
+        <textarea id="mr-skills" placeholder="Claude API, FastAPI, PostgreSQL, ..."></textarea>
+      </div>
+      <div class="card">
+        <div class="card-title">Education &amp; certificates</div>
+        <label>Education</label><input type="text" id="mr-education">
+        <div class="row3">
+          <div><label>CGPA</label><input type="text" id="mr-cgpa" placeholder="e.g. 7.14"></div>
+          <div><label>Batch / graduation year</label><input type="text" id="mr-batch-year" placeholder="e.g. 2026"></div>
+          <div><label>Active backlogs?</label>
+            <select id="mr-backlogs"><option value="false">No</option><option value="true">Yes</option></select>
+          </div>
+        </div>
+        <label>Certificates</label><input type="text" id="mr-certs">
+      </div>
+      <button class="primary" onclick="saveMasterResume()">Save master resume</button>
+      <span class="muted" id="mr-saved-msg" style="margin-left:10px;"></span>
+      <button style="margin-left:10px;" onclick="downloadResume()">Download ATS resume (.docx) ↓</button>
+    </div>
+
+    <!-- DISCOVER -->
+    <div class="view" id="view-discover">
+      <h1 class="view-title">Discover jobs</h1>
+      <p class="view-sub">Pulls fresh postings that match your saved skills from Adzuna + Remotive, skips blacklisted companies and clearly-ineligible JDs, dedups automatically, scores each against your resume. No manual searching.</p>
+      <div class="card">
+        <button class="primary" id="discover-btn" onclick="runDiscovery()">Find matching jobs ↗</button>
+        <span class="muted" id="discover-msg" style="margin-left:10px;"></span>
+      </div>
+      <div class="card">
+        <div class="card-title">Job sources</div>
+        <div id="sources-list" class="muted">Loading...</div>
+      </div>
+      <div class="card">
+        <div class="flex-between"><div class="card-title" style="margin:0;">Skill gaps across your matches</div></div>
+        <div id="skill-gaps-list" style="margin-top:10px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Company blacklist</div>
+        <div class="row2">
+          <input type="text" id="bl-company" placeholder="Company name">
+          <input type="text" id="bl-reason" placeholder="Reason (optional)">
+        </div>
+        <button class="small" style="margin-top:10px;" onclick="addBlacklist()">Add to blacklist</button>
+        <div id="blacklist-list" style="margin-top:14px;"></div>
+      </div>
+      <div id="matches-list"></div>
+    </div>
+
+    <!-- TAILOR (manual fallback) -->
+    <div class="view" id="view-tailor">
+      <h1 class="view-title">Tailor a specific JD</h1>
+      <p class="view-sub">Have a JD from LinkedIn or Naukri you want scored directly? Paste it here.</p>
+      <div class="card">
+        <div class="row2">
+          <div><label>Company</label><input type="text" id="tl-company" placeholder="e.g. Razorpay"></div>
+          <div><label>Role title</label><input type="text" id="tl-title" placeholder="e.g. Backend Engineer - AI"></div>
+        </div>
+        <div class="row2">
+          <div><label>Source</label>
+            <select id="tl-source">
+              <option>LinkedIn</option><option>Naukri</option><option>Indeed</option>
+              <option>Instahyre</option><option>Company site</option><option>Referral</option><option>Other</option>
+            </select>
+          </div>
+          <div><label>Application deadline (optional)</label><input type="date" id="tl-deadline"></div>
+        </div>
+        <label>Job posting URL (optional, but enables the one-click apply link)</label>
+        <input type="text" id="tl-url" placeholder="https://...">
+        <label>Job description</label>
+        <textarea id="tl-jd" style="min-height:160px;" placeholder="Paste the full JD text here..."></textarea>
+        <div style="margin-top:16px;">
+          <button class="primary" id="tl-run-btn" onclick="runTailor()">Score &amp; tailor ↗</button>
+        </div>
+      </div>
+      <div id="tl-result"></div>
+    </div>
+
+    <!-- TRACKER -->
+    <div class="view" id="view-tracker">
+      <h1 class="view-title">Applications</h1>
+      <p class="view-sub">Every application, one runway each.</p>
+      <div class="card" style="padding:14px 22px;">
+        <a href="#" id="export-csv-link"><button>Export CSV ↓</button></a>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto;">
+        <table>
+          <thead><tr><th>Code</th><th>Company / role</th><th>Source</th><th>Status</th><th>Assessment date</th><th>Match</th><th>Applied</th><th></th></tr></thead>
+          <tbody id="tracker-body"></tbody>
+        </table>
+        <div class="empty" id="tracker-empty" style="display:none;">No applications yet.</div>
+      </div>
+    </div>
+
+    <!-- JOB PORTALS -->
+    <div class="view" id="view-portals">
+      <h1 class="view-title">Job portals</h1>
+      <p class="view-sub">One profile per portal. Configure your details and enable connectors for automated/one-click apply.</p>
+
+      <div class="card">
+        <div class="flex-between">
+          <div class="card-title" style="margin:0;">Active connectors</div>
+          <button class="small" onclick="loadActiveConnectors()">Refresh</button>
+        </div>
+        <div id="active-connectors-list" style="margin-top:10px;" class="muted">Loading...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Add a new portal</div>
+        <div class="row2">
+          <div><label>Portal ID (lowercase)</label><input type="text" id="pp-new-name" placeholder="e.g. glassdoor"></div>
+          <div><label>Display name</label><input type="text" id="pp-new-display" placeholder="e.g. Glassdoor"></div>
+        </div>
+        <button class="small" style="margin-top:10px;" onclick="addNewPortal()">Add portal</button>
+      </div>
+
+      <div id="portals-list"></div>
+    </div>
+
+    <!-- GITHUB SYNC -->
+    <div class="view" id="view-github">
+      <h1 class="view-title">GitHub sync</h1>
+      <p class="view-sub">Monitors your GitHub repos. When a new project is detected, you get an email — click "Accept" to add it to your ATS-friendly resume automatically.</p>
+
+      <div class="card">
+        <div class="flex-between">
+          <div>
+            <button class="primary" id="gh-sync-btn" onclick="runGitHubSync()">Sync repos now ↗</button>
+            <span class="muted" id="gh-sync-msg" style="margin-left:10px;"></span>
+          </div>
+          <div id="gh-status-badge"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pending — accept to add to your resume</div>
+        <div id="gh-pending-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Accepted projects (on your resume)</div>
+        <div id="gh-accepted-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Ignored repos</div>
+        <div id="gh-ignored-list"></div>
+      </div>
+    </div>
+
+    <!-- REFERRALS / COLD REACHOUT -->
+    <div class="view" id="view-referrals">
+      <h1 class="view-title">Referrals &amp; cold reach-out</h1>
+      <p class="view-sub">Draft a short, personalized LinkedIn message to an HR or hiring manager, then track who you've reached out to. Launchpad only drafts the message — you review, edit, and send it yourself.</p>
+      <div class="card">
+        <div class="card-title">Draft a message</div>
+        <div class="row2">
+          <div><label>Their name</label><input type="text" id="rf-name" placeholder="e.g. Priya Sharma"></div>
+          <div><label>Their role</label><input type="text" id="rf-role" placeholder="e.g. HR / Engineering Manager"></div>
+        </div>
+        <div class="row2">
+          <div><label>Company</label><input type="text" id="rf-company" placeholder="e.g. Razorpay"></div>
+          <div><label>Target job title (optional)</label><input type="text" id="rf-target-title" placeholder="e.g. SDE-1"></div>
+        </div>
+        <label>LinkedIn URL (optional)</label>
+        <input type="text" id="rf-linkedin" placeholder="https://linkedin.com/in/...">
+        <label>JD excerpt (optional — makes the message more specific)</label>
+        <textarea id="rf-jd" style="min-height:80px;"></textarea>
+        <div style="margin-top:16px;">
+          <button class="primary" id="rf-draft-btn" onclick="draftReferralMessage()">Generate message ↗</button>
+        </div>
+        <div id="rf-draft-result" style="margin-top:14px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bulk draft (multiple contacts at once)</div>
+        <p class="muted" style="margin:0 0 10px;">One line per contact: <span class="mono">Name, Company, Role, LinkedIn URL (optional), Target job title (optional)</span></p>
+        <textarea id="rf-bulk-input" style="min-height:100px;" placeholder="Priya Sharma, Razorpay, Engineering Manager
+Rahul Verma, Zoho, HR
+"></textarea>
+        <label>JD excerpt applied to all of them (optional)</label>
+        <textarea id="rf-bulk-jd" style="min-height:60px;"></textarea>
+        <div style="margin-top:12px;">
+          <button class="primary" id="rf-bulk-btn" onclick="draftBulkReferrals()">Generate all &amp; save to tracker ↗</button>
+        </div>
+        <div id="rf-bulk-result" style="margin-top:12px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Follow-ups due</div>
+        <div id="rf-followups-list"></div>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto;">
+        <div class="card-title" style="margin:14px 0 0 22px;">Reach-out tracker</div>
+        <table>
+          <thead><tr><th>Contact</th><th>Company</th><th>Target role</th><th>Status</th><th>Sent</th><th></th></tr></thead>
+          <tbody id="referrals-body"></tbody>
+        </table>
+        <div class="empty" id="referrals-empty" style="display:none;">No reach-outs tracked yet.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

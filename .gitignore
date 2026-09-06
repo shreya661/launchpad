@@ -1,0 +1,31 @@
+# Environment variables & API keys
+.env
+*.env
+!.env.example
+backend/.env
+
+# Python Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+backend/venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Databases
+*.db
+*.sqlite3
+backend/launchpad.db
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
