@@ -11,7 +11,7 @@ automates fully.
 launchpad/
 ├── backend/     FastAPI + SQLite API
 └── frontend/    Static HTML/JS dashboard (talks to the backend)  
-``` 
+```  
 
 ## 1. Run the backend
 
